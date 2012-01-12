@@ -31,5 +31,6 @@ myfun() ->
    A@ = 1,
    1 = A,
    A = 1.
+```
 
 Sequential bindings can also be used in function arguments.
