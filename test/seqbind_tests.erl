@@ -57,3 +57,22 @@ arg_test() ->
 
 arg(A@) ->
     A@ + 1.
+
+case_test() ->
+    case 1 of
+        A@ ->
+            ok;
+        2=A@ ->
+            ok
+    end,
+    ?assertEqual(1,A@),
+    case 1 of
+        1 ->
+            A@=1;
+        _ ->
+            A2=2
+    end,
+    ?assertEqual(1,A@).
+    
+            
+            
