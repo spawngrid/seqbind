@@ -25,7 +25,7 @@ parse_transform(Forms, Options) ->
 
 do_transform(function, {function, _Line, Name, Arity, _}=Form, _Context, #state{} = State) ->
     {Form, true, State#state{ f = {Name, Arity}, seqvars = [] }};
-do_transform(clause, {clause, Line, H, G, B} = Form, _Context,
+do_transform(clause, {clause, Line, H, G, B} = _Form, _Context,
              #state{ in_case = true,
                      top_level_case_clause = true,
                      options = Options } = State) ->
