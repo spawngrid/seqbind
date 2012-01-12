@@ -1,0 +1,11 @@
+{application, seqbind,
+ [
+  {description, "Sequential binding"},
+  {vsn, git},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
