@@ -5,6 +5,7 @@
         {
           f,
           seqvars = [],
+          case_seqvars = [],
           side,
           options,
           in_case = false,
@@ -12,7 +13,8 @@
           skip_clause,
           skip_case,
           skip_if,
-          top_level_case_clause
+          top_level_case_clause,
+          last_case_state
         }).
 
 parse_transform(Forms, Options) ->
@@ -27,18 +29,34 @@ do_transform(function, {function, _Line, Name, Arity, _}=Form, _Context, #state{
     {Form, true, State#state{ f = {Name, Arity}, seqvars = [] }};
 do_transform(clause, {clause, Line, H, G, B} = _Form, _Context,
              #state{ in_case = true,
+                     seqvars = SeqVars,
                      top_level_case_clause = true,
                      options = Options } = State) ->
     {H1, State1} = parse_trans:do_transform(fun do_transform/4,
-                                               State#state{ 
-                                                 side = left,
-                                                 top_level_case_clause = false
-                                                },
-                                               H, 
-                                               Options),
-    {{clause, Line, parse_trans:revert(H1), G, B}, true, State1#state { side = undefined }};
-do_transform(clause, Form, _Context, #state{ skip_clause = true } = State) ->
+                                            State#state{ 
+                                              side = left,
+                                              top_level_case_clause = false
+                                             },
+                                            H, 
+                                            Options),
+    {G1, State2} = parse_trans:do_transform(fun do_transform/4,
+                                            State1#state{ side = undefined },
+                                            G, 
+                                            Options),
+    {B1, State3} = parse_trans:do_transform(fun do_transform/4,
+                                            State2#state{ 
+                                              side = undefined },
+                                            B, 
+                                            Options),
+    {{clause, Line, 
+      parse_trans:revert(H1), 
+      parse_trans:revert(G1), 
+      parse_trans:revert(B1)}, false, State#state{ top_level_case_clause = false, case_seqvars = State3#state.seqvars  }};
+do_transform(clause, Form, _Context, #state{ in_case = true, skip_clause = true } = State) ->
     {Form, true, State#state{ skip_clause = false, top_level_case_clause = true }};
+do_transform(clause, Form, _Context, #state{  skip_clause = true } = State) ->
+    {Form, true, State#state{ skip_clause = false}};
+
 do_transform(clause, Form, _Context, #state{ seqvars = SeqVars, 
                                              in_case = InCase,
                                              in_if = InIf,
@@ -50,27 +68,38 @@ do_transform(clause, Form, _Context, #state{ seqvars = SeqVars,
             SeqVars1 = [[]|SeqVars]
     end,
     {Form1, State1} = parse_trans:do_transform(fun do_transform/4,
-                                               State#state{ skip_clause = true, seqvars = SeqVars1 },
+                                               State#state{ skip_clause = true, seqvars = SeqVars1, top_level_case_clause = true },
                                                [Form], 
+
                                                Options),
-    State2 = case (InCase or InIf) of
+
+    State2 = case InCase of
                  true ->
-                     State1#state{ seqvars = State1#state.seqvars };
+                     State1;
                  _ ->
                      State1#state{ seqvars = maybe_tl(State1#state.seqvars) }
              end,
-    {hd(parse_trans:revert(Form1)), false, State2};
+    State3 = case InIf of
+                 true ->
+                     State1;
+                 _ ->
+                     State2
+             end,
+
+    {hd(parse_trans:revert(Form1)), false, State3};
 do_transform(case_expr, Form, _Context, #state{ skip_case = true } = State) ->
     {Form, true, State#state{ skip_case = false }};
 do_transform(case_expr, Form, _Context, #state{ options = Options}  = State) ->
     {Form1, State1} = parse_trans:do_transform(fun do_transform/4,
                                                State#state{ 
                                                  in_case = true,
-                                                 skip_case = true
+                                                 skip_case = true,
+                                                 top_level_case_clause = false
                                                 },
                                                [Form], 
                                                Options),
-    {hd(parse_trans:revert(Form1)), false, State1#state{ in_case = false, 
+    {hd(parse_trans:revert(Form1)), false, State1#state{ in_case = false,
+                                                         seqvars = State1#state.case_seqvars,
                                                          skip_case = false }};
 do_transform(if_expr, Form, _Context, #state{ skip_if = true } = State) ->
     {Form, true, State#state{ skip_if = false }};

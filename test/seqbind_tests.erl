@@ -77,6 +77,13 @@ case_test() ->
         2=A@ ->
             ok
     end,
+    ?assertEqual(1,A@),
+    case 2 of
+        1 ->
+            A@ = 3;
+        _ ->
+            A@ = 1
+    end,
     ?assertEqual(1,A@).
 
 case_replace_test() ->
