@@ -58,6 +58,18 @@ arg_test() ->
 arg(A@) ->
     A@ + 1.
 
+
+in_arg_test() ->
+    A@ = 1,
+    ?assertEqual(2,arg(A@)).
+
+in_multi_arg_test() ->
+    A@ = 1,
+    ?assertEqual(3,multi_arg(A@,A@,A@)).
+
+multi_arg(A,B,C) ->
+    A + B + C.
+
 case_test() ->
     case 1 of
         A@ ->
