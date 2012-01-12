@@ -11,7 +11,8 @@
           in_if = false,
           skip_clause,
           skip_case,
-          skip_if
+          skip_if,
+          top_level_case_clause
         }).
 
 parse_transform(Forms, Options) ->
@@ -24,8 +25,20 @@ parse_transform(Forms, Options) ->
 
 do_transform(function, {function, _Line, Name, Arity, _}=Form, _Context, #state{} = State) ->
     {Form, true, State#state{ f = {Name, Arity}, seqvars = [] }};
+do_transform(clause, {clause, Line, H, G, B} = Form, _Context,
+             #state{ in_case = true,
+                     top_level_case_clause = true,
+                     options = Options } = State) ->
+    {H1, State1} = parse_trans:do_transform(fun do_transform/4,
+                                               State#state{ 
+                                                 side = left,
+                                                 top_level_case_clause = false
+                                                },
+                                               H, 
+                                               Options),
+    {{clause, Line, parse_trans:revert(H1), G, B}, true, State1#state { side = undefined }};
 do_transform(clause, Form, _Context, #state{ skip_clause = true } = State) ->
-    {Form, true, State#state{ skip_clause = false }};
+    {Form, true, State#state{ skip_clause = false, top_level_case_clause = true }};
 do_transform(clause, Form, _Context, #state{ seqvars = SeqVars, 
                                              in_case = InCase,
                                              in_if = InIf,

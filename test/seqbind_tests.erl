@@ -79,6 +79,15 @@ case_test() ->
     end,
     ?assertEqual(1,A@).
 
+case_replace_test() ->
+    A@ = 1,
+    case {ok, A@ + 1} of
+        {ok, A@} ->
+            ok
+    end,
+    ?assertEqual(2,A@).
+
+
 case_stack_test() ->    
     ?assertEqual(2,case_stack(1)).
 
