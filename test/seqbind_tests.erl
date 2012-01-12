@@ -17,5 +17,31 @@ match_test() ->
     2 = A,
     A = 2,
     2 = A@.
-    
- 
+
+fun_test() ->    
+    A@ = 1,
+    F = fun() ->
+            A@
+        end,
+    ?assertEqual(1,F()).
+
+fun_arg_test() ->    
+    A@ = 1,
+    F = fun(A@) ->
+            A@ + 1
+        end,
+    ?assertEqual(3,F(2)).
+
+fun_override_test() ->    
+    A@ = 1,
+    F = fun() ->
+                A@ = A@ + 1,
+                A@
+        end,
+    ?assertEqual(2,F()).
+
+arg_test() -> 
+    ?assertEqual(2,arg(1)).
+
+arg(A@) ->
+    A@ + 1.
