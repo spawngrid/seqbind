@@ -12,6 +12,11 @@ multiple_assignments_with_use_test() ->
     A@ = A@ + 1,
     ?assertEqual(2,A@).
 
+complex_assignment_test() ->
+    {ok, A@} = {ok, element(1,{1})},
+    {ok, A@} = {ok, element(1,{2})},
+    ?assertEqual(2,A@).
+
 multiple_variables_test() ->
     A@ = 1,
     A@ = A@ + 1,
