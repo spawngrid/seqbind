@@ -7,9 +7,11 @@
           seqvars = [],
           side,
           options,
-          in_case,
+          in_case = false,
+          in_if = false,
           skip_clause,
-          skip_case
+          skip_case,
+          skip_if
         }).
 
 parse_transform(Forms, Options) ->
@@ -21,17 +23,24 @@ parse_transform(Forms, Options) ->
     Result.
 
 do_transform(function, {function, _Line, Name, Arity, _}=Form, _Context, #state{} = State) ->
-    {Form, true, State#state{ f = {Name, Arity} }};
+    {Form, true, State#state{ f = {Name, Arity}, seqvars = [] }};
 do_transform(clause, Form, _Context, #state{ skip_clause = true } = State) ->
     {Form, true, State#state{ skip_clause = false }};
 do_transform(clause, Form, _Context, #state{ seqvars = SeqVars, 
                                              in_case = InCase,
+                                             in_if = InIf,
                                              options = Options } = State) ->
+    case (InCase or InIf) of
+        true ->
+            SeqVars1 = SeqVars;
+        false ->
+            SeqVars1 = [[]|SeqVars]
+    end,
     {Form1, State1} = parse_trans:do_transform(fun do_transform/4,
-                                               State#state{ skip_clause = true, seqvars = [[]|SeqVars] },
+                                               State#state{ skip_clause = true, seqvars = SeqVars1 },
                                                [Form], 
                                                Options),
-    State2 = case InCase of
+    State2 = case (InCase or InIf) of
                  true ->
                      State1#state{ seqvars = State1#state.seqvars };
                  _ ->
@@ -50,6 +59,18 @@ do_transform(case_expr, Form, _Context, #state{ options = Options}  = State) ->
                                                Options),
     {hd(parse_trans:revert(Form1)), false, State1#state{ in_case = false, 
                                                          skip_case = false }};
+do_transform(if_expr, Form, _Context, #state{ skip_if = true } = State) ->
+    {Form, true, State#state{ skip_if = false }};
+do_transform(if_expr, Form, _Context, #state{ options = Options}  = State) ->
+    {Form1, State1} = parse_trans:do_transform(fun do_transform/4,
+                                               State#state{ 
+                                                 in_if = true,
+                                                 skip_if = true
+                                                },
+                                               [Form], 
+                                               Options),
+    {hd(parse_trans:revert(Form1)), false, State1#state{ in_if = false, 
+                                                         skip_if = false }};
 
 do_transform(match_expr, {match,Line,L,R}, _Context,
              #state{ options = Options } = State) ->
@@ -71,7 +92,8 @@ do_transform(variable, {var, Line, Name}=Form, Context,
                 [] ->
                     {{var, Line, seq_name(CleanName, 0)}, false, State#state{ seqvars = [[{Name,0}|SeqVars]|R] }};
                 _ ->
-                    do_transform(variable, Form, Context, State#state{ seqvars = R })
+                    {Form1, Rec, #state{ seqvars = [SeqVars1|_] } = State1 } = do_transform(variable, Form, Context, State#state{ seqvars = R }),
+                    {Form1, Rec, State1#state{ seqvars = [SeqVars1 ++ SeqVars|R] }}
             end;
         {{normal, _}, undefined, _} ->
             SeqName = seq_name(Name),
