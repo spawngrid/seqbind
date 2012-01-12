@@ -77,14 +77,16 @@ case_test() ->
         2=A@ ->
             ok
     end,
-    ?assertEqual(1,A@),
-    case 1 of
-        1 ->
-            A@=1;
-        _ ->
-            A2=2
-    end,
     ?assertEqual(1,A@).
-    
+
+stack_test() ->    
+    ?assertEqual(2,stack(1)).
+
+stack(Req@) ->
+    case Req@ of 
+        Req@ ->
+            Req@ = Req@ +1
+    end,
+    Req@.
             
             
