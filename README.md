@@ -1,4 +1,4 @@
-seqbind
+SeqBind
 =======
 
 Problem
