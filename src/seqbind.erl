@@ -117,8 +117,9 @@ scope(_Type, Form, _Context, State) ->
 
 -define(do_transform_scope(FormType,ScopeName),
 do_transform(FormType, Form, Context, #state{ scope = [H|_] } = State) when H /= ScopeName ->
-    {Form1, Rec, State1} = transform(fun scope/4, State, Form, Context),
+    {Form1, Rec, State1} = transform(fun scope/4, State, Form, Context),    
     {Form1, Rec, State1#state{
+                   scope = tl(State1#state.scope),
                    seqvars = State1#state.clauses_seqvars,
                    clauses_seqvars = []}}).
 
@@ -146,8 +147,8 @@ do_transform(variable, {var, Line, Name}=Form, Context,
                 [] ->
                     {{var, Line, seq_name(CleanName, 0)}, false, State#state{ seqvars = [[{Name,0}|SeqVars]|R] }};
                 _ ->
-                    {Form1, Rec, #state{ seqvars = [SeqVars1|_] } = State1 } = do_transform(variable, Form, Context, State#state{ seqvars = R }),
-                    {Form1, Rec, State1#state{ seqvars = [SeqVars1 ++ SeqVars|R] }}
+                    {Form1, Rec, #state{ seqvars = [SeqVars1|R1] } = State1 } = do_transform(variable, Form, Context, State#state{ seqvars = R }),
+                    {Form1, Rec, State1#state{ seqvars = [SeqVars1 ++ SeqVars|R++R1] }}
             end;
         {{normal, _}, undefined, _} ->
             SeqName = seq_name(Name),
