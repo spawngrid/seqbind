@@ -57,7 +57,7 @@ transform(Fun, State, Forms, Context) when is_list(Forms) ->
 ?ScopeNoShift(do_transform,receive_expr, 'receive');
 ?ScopeNoShift(do_transform,case_expr, 'case');
 ?ScopeNoShift(do_transform,if_expr, 'if');
-scope(clause, {clause, Line, H, G, B}=Form, Context, #state{
+scope(clause, {clause, Line, H, G, B}, Context, #state{
                       } = State) ->
     {H1, Rec, State1} = 
         transform(fun do_transform/4,
@@ -91,7 +91,7 @@ scope(clause, {clause, Line, H, G, B}=Form, Context, #state{
                                         clauses_seqvars = State3#state.seqvars
                                        }};
 ?ScopeShift(do_transform,clause, clause);
-scope(match_expr, {match, Line, L, R}=Form, Context, #state{ 
+scope(match_expr, {match, Line, L, R}, Context, #state{ 
                                          scope = Scopes
                                         } = State) ->
     {R1, _Rec, State1} = 
