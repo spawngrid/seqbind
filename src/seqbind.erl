@@ -45,6 +45,7 @@ transform(Fun, State, Forms, Context) when is_list(Forms) ->
                                         }, 
                              Form, Context),
                {Form1, Rec, State1#state{
+                              scope = maybe_tl(State1#state.scope),
                               seqvars = Out(State1#state.seqvars) 
                              }}).
 
@@ -68,6 +69,7 @@ scope(clause, {clause, Line, H, G, B}, Context, #state{
     GsT = [
            transform(fun do_transform/4,
                      State#state{
+                       scope = State1#state.scope,
                        seqvars = State1#state.seqvars
                       }, 
                      G0, Context) || G0 <- G ],
@@ -83,6 +85,7 @@ scope(clause, {clause, Line, H, G, B}, Context, #state{
     {B1, Rec, State3} = 
         transform(fun do_transform/4,
                   State#state{
+                    scope = State2#state.scope,
                     seqvars = State2#state.seqvars
                    }, 
                   B, Context),
@@ -119,7 +122,6 @@ scope(_Type, Form, _Context, State) ->
 do_transform(FormType, Form, Context, #state{ scope = [H|_] } = State) when H /= ScopeName ->
     {Form1, Rec, State1} = transform(fun scope/4, State, Form, Context),    
     {Form1, Rec, State1#state{
-                   scope = tl(State1#state.scope),
                    seqvars = State1#state.clauses_seqvars,
                    clauses_seqvars = []}}).
 
