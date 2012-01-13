@@ -4,19 +4,10 @@
 -record(state, 
         {
           scope = [],
-          %% f,
           seqvars = [],
           clauses_seqvars = [],
-          %% case_seqvars = [],
           side,
           options
-          %% in_case = false,
-          %% in_if = false,
-          %% skip_clause,
-          %% skip_case,
-          %% skip_if,
-          %% top_level_case_clause,
-          %% last_case_state
         }).
 
 parse_transform(Forms, Options) ->
