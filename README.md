@@ -19,11 +19,11 @@ Solution
 
 While there are some solutions available, like giving variables more descriptive names or extracting every step to a separate function, they might not be suitable for every case. Particularly, giving descriptive names still doesn't help with reordering and having too many function calls might add a slight overhead or increase the complexity of the code.
 
-Seqbind offers a different, yet simple, solution to this problem.
+SeqBind offers a different, yet simple, solution to this problem.
 
-It introduces a concept of sequential bindings. What is it? Sequential binding is a binding that has a suffix of `@`, like `L@` or 'Req@`. 
+It introduces a concept of sequential bindings. What is that? Sequential binding is a binding that has a suffix of `@`, like `L@` or `Req@`. 
 
-Seqbind is a parse transformation that numbers all occurences of such bindings, so they become `L@0`,`L@1`,`Req@0`,`Req@1` and so on.
+SeqBind is a parse transformation that numbers all occurences of such bindings, so they become `L@0`,`L@1`,`Req@0`,`Req@1` and so on.
 
 In order to use it, one should enable `seqbind` parse transformation, either through compiler options or in the module:
 
@@ -39,7 +39,7 @@ There are few rules to be followed.
 ### Left and Right
 
 
-In the matches (such as `A@ = 1`) the side of the match is significant to seqbind. Even though in Erlang itself it is not, this agreement allows seqbind to do its job.
+In the matches (such as `A@ = 1`) the side of the match is significant to SeqBind. Even though in Erlang itself it is not, this agreement allows seqbind to do its job.
 
 The basic idea is that if you have a sequential binding on the left, its counter will be incremented. If it's on the right, the current counter value will be used.
 
