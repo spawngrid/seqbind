@@ -43,7 +43,7 @@ In the matches (such as `A@ = 1`) the side of the match is significant to SeqBin
 
 The basic idea is that if you have a sequential binding on the left, its counter will be incremented. If it's on the right, the current counter value will be used.
 
-As a consequence of this, one should be aware, that the commonly used syntax of:
+As a consequence of this, one should be aware, that with the commonly used syntax:
 
 ```erlang
 #state{} = State@
@@ -65,4 +65,4 @@ State@ = get_state(),
 State = get_state_again()
 ```
 
-The same goes to `case`,`if` and `receive` clauses, also note that you cannot `seqbind` a variable after it has been declared, it must come first.
+The same goes with `case`,`if` and `receive` clauses, also note that you cannot `seqbind` a variable after it has been declared, it must come first.
