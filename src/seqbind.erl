@@ -3,130 +3,152 @@
 
 -record(state, 
         {
-          f,
+          scope = [],
+          %% f,
           seqvars = [],
-          case_seqvars = [],
+          clauses_seqvars = [],
+          %% case_seqvars = [],
           side,
-          options,
-          in_case = false,
-          in_if = false,
-          skip_clause,
-          skip_case,
-          skip_if,
-          top_level_case_clause,
-          last_case_state
+          options
+          %% in_case = false,
+          %% in_if = false,
+          %% skip_clause,
+          %% skip_case,
+          %% skip_if,
+          %% top_level_case_clause,
+          %% last_case_state
         }).
 
 parse_transform(Forms, Options) ->
-    {Forms1, _State} = parse_trans:transform(fun do_transform/4, 
+    {Forms1, _State} = parse_trans:transform(fun scope/4, 
                                              #state{ options = Options },
                                              Forms, Options),
     Result = parse_trans:revert(Forms1),
-%    io:format("~p~n",[Result]),
+%    io:format("~s~n",[[ erl_pp:form(F) || F <- Result]]),
     Result.
 
-do_transform(function, {function, _Line, Name, Arity, _}=Form, _Context, #state{} = State) ->
-    {Form, true, State#state{ f = {Name, Arity}, seqvars = [] }};
-do_transform(clause, {clause, Line, H, G, B} = _Form, _Context,
-             #state{ in_case = true,
-                     top_level_case_clause = true,
-                     options = Options } = State) ->
-    {H1, State1} = parse_trans:do_transform(fun do_transform/4,
-                                            State#state{ 
-                                              side = left,
-                                              top_level_case_clause = false
-                                             },
-                                            H, 
-                                            Options),
-    {G1, State2} = parse_trans:do_transform(fun do_transform/4,
-                                            State1#state{ side = undefined },
-                                            G, 
-                                            Options),
-    {B1, State3} = parse_trans:do_transform(fun do_transform/4,
-                                            State2#state{ 
-                                              side = undefined },
-                                            B, 
-                                            Options),
-    {{clause, Line, 
-      parse_trans:revert(H1), 
-      parse_trans:revert(G1), 
-      parse_trans:revert(B1)}, false, State#state{ top_level_case_clause = false, case_seqvars = State3#state.seqvars  }};
-do_transform(clause, Form, _Context, #state{ in_case = true, skip_clause = true } = State) ->
-    {Form, true, State#state{ skip_clause = false, top_level_case_clause = true }};
-do_transform(clause, Form, _Context, #state{  skip_clause = true } = State) ->
-    {Form, true, State#state{ skip_clause = false}};
 
-do_transform(clause, Form, _Context, #state{ seqvars = SeqVars, 
-                                             in_case = InCase,
-                                             in_if = InIf,
-                                             options = Options } = State) ->
-    case (InCase or InIf) of
-        true ->
-            SeqVars1 = SeqVars;
-        false ->
-            SeqVars1 = [[]|SeqVars]
+-define(UnshiftSeqVars, [[]|SeqVars]).
+-define(ShiftSeqVars(SV), maybe_tl(SV)).
+
+transform(Fun, State, Form, Context) when is_tuple(Form) ->
+    {L,Rec,State1} = transform(Fun, State, [Form], Context),
+    {hd(L),Rec,State1};
+
+transform(Fun, State, Forms, Context) when is_list(Forms) ->
+    {Form1, State1} = parse_trans:do_transform(Fun,
+                                               State,
+                                               Forms, 
+                                               Context),
+    {parse_trans:revert(Form1),false,State1}.
+
+-define(Scope(F,Name,ScopeName,In,Out), 
+        scope(Name, Form, Context, #state{ 
+                            seqvars = SeqVars,
+                            scope = Scopes
+                           } = State) ->
+               {Form1, Rec, State1} = 
+                   transform(fun F/4,
+                             State#state{ scope = [ScopeName|Scopes],
+                                          seqvars = In
+                                        }, 
+                             Form, Context),
+               {Form1, Rec, State1#state{
+                              seqvars = Out(State1#state.seqvars) 
+                             }}).
+
+-define(ScopeShift(F,Name,ScopeName),?Scope(F,Name,ScopeName,?UnshiftSeqVars,?ShiftSeqVars)).
+-define(ScopeNoShift(F,Name,ScopeName),?Scope(F,Name,ScopeName,SeqVars,(fun (X) -> X end))).
+
+
+?ScopeShift(do_transform,function, function);
+?ScopeShift(do_transform,fun_expr, 'fun');
+?ScopeNoShift(do_transform,receive_expr, 'receive');
+?ScopeNoShift(do_transform,case_expr, 'case');
+?ScopeNoShift(do_transform,if_expr, 'if');
+scope(clause, {clause, Line, H, G, B}=Form, Context, #state{
+                      } = State) ->
+    {H1, Rec, State1} = 
+        transform(fun do_transform/4,
+                  State#state{
+                    side = left
+                   }, 
+                  H, Context),
+    GsT = [
+           transform(fun do_transform/4,
+                     State#state{
+                       seqvars = State1#state.seqvars
+                      }, 
+                     G0, Context) || G0 <- G ],
+    case lists:reverse(GsT) of
+        [] ->
+            State2 = State1;
+        [{_, _, State2}|_] ->
+            ok
     end,
-    {Form1, State1} = parse_trans:do_transform(fun do_transform/4,
-                                               State#state{ skip_clause = true, seqvars = SeqVars1, top_level_case_clause = true },
-                                               [Form], 
 
-                                               Options),
+    G1 = [ G0 || {G0, _, _} <- GsT ],
 
-    State2 = case InCase of
-                 true ->
-                     State1;
-                 _ ->
-                     State1#state{ seqvars = maybe_tl(State1#state.seqvars) }
-             end,
-    State3 = case InIf of
-                 true ->
-                     State1;
-                 _ ->
-                     State2
-             end,
+    {B1, Rec, State3} = 
+        transform(fun do_transform/4,
+                  State#state{
+                    seqvars = State2#state.seqvars
+                   }, 
+                  B, Context),
 
-    {hd(parse_trans:revert(Form1)), false, State3};
-do_transform(case_expr, Form, _Context, #state{ skip_case = true } = State) ->
-    {Form, true, State#state{ skip_case = false }};
-do_transform(case_expr, Form, _Context, #state{ options = Options}  = State) ->
-    {Form1, State1} = parse_trans:do_transform(fun do_transform/4,
-                                               State#state{ 
-                                                 in_case = true,
-                                                 skip_case = true,
-                                                 top_level_case_clause = false
-                                                },
-                                               [Form], 
-                                               Options),
-    {hd(parse_trans:revert(Form1)), false, State1#state{ in_case = false,
-                                                         seqvars = State1#state.case_seqvars,
-                                                         skip_case = false }};
-do_transform(if_expr, Form, _Context, #state{ skip_if = true } = State) ->
-    {Form, true, State#state{ skip_if = false }};
-do_transform(if_expr, Form, _Context, #state{ options = Options}  = State) ->
-    {Form1, State1} = parse_trans:do_transform(fun do_transform/4,
-                                               State#state{ 
-                                                 in_if = true,
-                                                 skip_if = true
-                                                },
-                                               [Form], 
-                                               Options),
-    {hd(parse_trans:revert(Form1)), false, State1#state{ in_if = false, 
-                                                         skip_if = false }};
+    {{clause, Line, H1, G1, B1}, Rec, State#state{
+                                        clauses_seqvars = State3#state.seqvars
+                                       }};
+?ScopeShift(do_transform,clause, clause);
+scope(match_expr, {match, Line, L, R}=Form, Context, #state{ 
+                                         scope = Scopes
+                                        } = State) ->
+    {R1, _Rec, State1} = 
+        transform(fun do_transform/4,
+                  State#state{ scope = [match|Scopes],
+                               side = right
+                             }, 
+                  R, Context),
+    {L1, _Rec, State2} = 
+        transform(fun do_transform/4,
+                  State#state{ scope = [match|Scopes],
+                               side = left,
+                               seqvars = State1#state.seqvars
+                             }, 
+                  L, Context),
 
-do_transform(match_expr, {match,Line,L,R}, _Context,
-             #state{ options = Options } = State) ->
-    {RForm, State1} = parse_trans:do_transform(fun do_transform/4,
-                                          State#state{ side = right },
-                                          [R], Options),
-    {LForm, State2} = parse_trans:do_transform(fun do_transform/4,
-                                          State1#state{ side = left },
-                                          [L], Options),
-    {{match,Line,
-     hd(parse_trans:revert(LForm)),
-     hd(parse_trans:revert(RForm))},false,State2#state{ side = undefined }};
+    {{match, Line, L1, R1}, false, State#state{
+                                   seqvars = State2#state.seqvars
+                                    }};
     
+scope(_Type, Form, _Context, State) ->
+    {Form, true, State}.
+
+-define(do_transform_scope(FormType,ScopeName),
+do_transform(FormType, Form, Context, #state{ scope = [H|_] } = State) when H /= ScopeName ->
+    {Form1, Rec, State1} = transform(fun scope/4, State, Form, Context),
+    {Form1, Rec, State1#state{
+                   seqvars = State1#state.clauses_seqvars,
+                   clauses_seqvars = []}}).
+
+
+do_transform(match_expr = Type, Form, Context, State) ->
+    scope(Type, Form, Context, State);
+
+do_transform(clause = Type, Form, Context, #state{ scope = [T|_] } = State)
+  when T == 'case';
+       T == 'if';
+       T == 'receive' ->
+    scope(Type, Form, Context, State);
+
+?do_transform_scope(case_expr,'case');
+?do_transform_scope(if_expr,'if');
+?do_transform_scope(receive_expr,'receive');
+
 do_transform(variable, {var, Line, Name}=Form, Context, 
-             #state{ seqvars = [SeqVars|R]=SV, side = Side } = State) ->
+             #state{ seqvars = SV, side = Side } = State) ->
+    SeqVars = maybe_hd(SV),
+    R = maybe_tl(SV),
     case {binding_type(Name),proplists:get_value(Name, SeqVars), Side} of
         {{seq, CleanName},undefined,_} ->
             case R of
@@ -157,6 +179,8 @@ do_transform(variable, {var, Line, Name}=Form, Context,
 do_transform(_Type, Form, _Context, State) ->
     {Form, true, State}.
 
+
+%%%
     
 binding_type(Name) ->
     case lists:reverse(atom_to_list(Name)) of
@@ -167,7 +191,7 @@ binding_type(Name) ->
     end.
 
 seq_name(Name, Ctr) ->
-    list_to_atom(atom_to_list(Name) ++ integer_to_list(Ctr)).
+    list_to_atom(atom_to_list(Name) ++ "@" ++ integer_to_list(Ctr)).
 
 seq_name(Name) ->
     list_to_atom(atom_to_list(Name) ++ "@").
@@ -176,3 +200,8 @@ maybe_tl([]) ->
     [];
 maybe_tl([_|T]) ->
     T.
+
+maybe_hd([]) ->
+    [];
+maybe_hd([H|_]) ->
+    H.

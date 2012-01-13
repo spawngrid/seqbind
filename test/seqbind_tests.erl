@@ -84,7 +84,13 @@ case_test() ->
         _ ->
             A@ = 1
     end,
-    ?assertEqual(1,A@).
+    ?assertEqual(1,A@),
+    case (fun(B@) -> B@ end)(1) of
+        1 ->
+            B@ = 2
+    end,
+    ?assertEqual(2,B@).
+                  
 
 case_replace_test() ->
     A@ = 1,
@@ -93,6 +99,18 @@ case_replace_test() ->
             ok
     end,
     ?assertEqual(2,A@).
+
+receive_test() ->
+    self() ! yes,
+    receive
+        1 ->
+            A@ = 2;
+        yes -> 
+            A@ = yes;
+        A@ ->
+            ok
+    end,
+    ?assertEqual(yes,A@).
 
 
 case_stack_test() ->    
