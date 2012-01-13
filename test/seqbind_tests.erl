@@ -82,9 +82,9 @@ case_test() ->
         1 ->
             A@ = 3;
         _ ->
-            A@ = 1
+            A@ = 4
     end,
-    ?assertEqual(1,A@),
+    ?assertEqual(4,A@),
     case (fun(B@) -> B@ end)(1) of
         1 ->
             B@ = 2
