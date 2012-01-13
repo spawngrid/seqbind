@@ -62,7 +62,7 @@ If instead of incrementing a sequential binding's counter you actually want to m
 
 ```erlang
 State@ = get_state(),
-State = get_state_agin()
+State = get_state_again()
 ```
 
 The same goes to `case`,`if` and `receive` clauses.
