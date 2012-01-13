@@ -167,6 +167,12 @@ do_transform(variable, {var, Line, Name}=Form, Context,
         {{seq, CleanName},Counter, _} ->
             {{var, Line, seq_name(CleanName, Counter)}, false, State}
     end;
+%% Funny debug hack
+do_transform(application, {call, _Line, {atom, _, seqbind_debug}, []}, _Context, State) ->
+    io:format("===SEQBIND DEBUG===~n"
+              "~p"
+              "~n==================~n",[State]),
+    {{atom, _Line, ok},false,State};
 do_transform(_Type, Form, _Context, State) ->
     {Form, true, State}.
 
