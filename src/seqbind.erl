@@ -127,12 +127,14 @@ do_transform(FormType, Form, Context, #state{ scope = [H|_] } = State) when H /=
 do_transform(match_expr = Type, Form, Context, State) ->
     scope(Type, Form, Context, State);
 
-do_transform(clause = Type, Form, Context, #state{ scope = [T|_] } = State)
+do_transform(clause = Type, Form, Context, #state{ scope = [T|_] = Scopes } = State)
   when T == 'case';
        T == 'if';
        T == 'receive' ->
-    scope(Type, Form, Context, State);
-
+    {Form1, Rec, State1} = scope(Type, Form, Context, State#state{ scope = ['clause'|Scopes]} ),
+    {Form1, Rec, State1#state{
+                   scope = tl(State1#state.scope)
+                  }};
 ?do_transform_scope(case_expr,'case');
 ?do_transform_scope(if_expr,'if');
 ?do_transform_scope(receive_expr,'receive');

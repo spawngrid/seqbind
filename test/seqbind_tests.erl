@@ -98,6 +98,22 @@ case_test() ->
             B@ = 2
     end,
     ?assertEqual(2,B@).
+
+nested_case_test() ->
+    A@=2,
+    case 1 of
+        1 ->
+            case {2,1} of
+                {2,A@} ->
+                    ok;
+                {3,A@} ->
+                    ok
+            end,
+            ?assertEqual(1,A@)
+    end,
+    ?assertEqual(1,A@).
+                    
+                    
                   
 
 case_replace_test() ->
