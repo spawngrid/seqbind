@@ -36,8 +36,7 @@ How
 
 There are few rules to be followed.
 
-Left and Right
-^^^^^^^^^^^^^^
+### Left and Right
 
 
 In the matches (such as `A@ = 1`) the side of the match is significant to seqbind. Even though in Erlang itself it is not, this agreement allows seqbind to do its job.
@@ -56,9 +55,7 @@ is not a good idea as it will not increment the counter for `State@` (with the e
 State@ = #state{}
 ```
 
-Matching
-^^^^^^^^
-
+### Matching
 
 If instead of incrementing a sequential binding's counter you actually want to match to its value while putting it on the left side, you should simply drop the suffix in order to be able to do so:
 
