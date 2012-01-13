@@ -85,6 +85,14 @@ case_test() ->
             A@ = 4
     end,
     ?assertEqual(4,A@),
+    case {1,7} of
+        {0,A@} ->
+            ok;
+        {1,A@} ->
+            ok
+    end,
+    ?assertEqual(7,A@),
+
     case (fun(B@) -> B@ end)(1) of
         1 ->
             B@ = 2
