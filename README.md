@@ -45,6 +45,7 @@ Returning to the problem definition, this is how your code will look like with S
 
 Neat, eh?
 
+__Please__, don't use SeqBind everywhere. It is intended to be only used in those situations that really warrant its use. Overuse of this technique will make your code look too noisy (`@` does stand out) and in general should be avoided as it does obscure the functional nature of Erlang.
 
 General Rules
 ---
