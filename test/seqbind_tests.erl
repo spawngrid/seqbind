@@ -155,6 +155,15 @@ if_stack(Req@) ->
             Req@ = Req@ + 1
     end,
     Req@.
+
+
+block_test() ->
+    A@ = 1,
+    begin
+        A@ = 2,
+        ?assertEqual(2, A@)
+    end,
+    ?assertEqual(2, A@).
             
 let_test() -> 
     A@ = 1,
