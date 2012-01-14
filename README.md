@@ -31,6 +31,8 @@ In order to use SeqBind, one should enable the `seqbind` parse transformation, t
 -compile({parse_transform,seqbind}).
 ```
 
+One of the important properties of SeqBind is that it does not introduce any overhead (unlike some other, relatively similar solutions). Namely, it doesn't wrap anything into `fun`s but simply auto-numbers bindings. Effectively, your compiled code is no different from the original code structurally.
+
 General Rules
 ---
 
