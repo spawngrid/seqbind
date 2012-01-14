@@ -33,6 +33,19 @@ In order to use SeqBind, one should enable the `seqbind` parse transformation, t
 
 One of the important properties of SeqBind is that it does not introduce any overhead (unlike some other, relatively similar solutions). Namely, it doesn't wrap anything into `fun`s but simply auto-numbers bindings. Effectively, your compiled code is no different from the original code structurally.
 
+Returning to the problem definition, this is how your code will look like with SeqBind:
+
+```erlang
+ L@ = lists:map(fun (X) -> ... end, L@),
+ L@ = lists:filter(fun (X) -> ... end, L@)
+ %% or
+ {Q,Req@} = cowboy_http_req:qs_val(<<"q">>,Req@),
+ {Id,Req@} = cowboy_http_req:qs_val(<<"id">>,Req@)
+```
+
+Neat, eh?
+
+
 General Rules
 ---
 
