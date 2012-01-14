@@ -156,4 +156,8 @@ if_stack(Req@) ->
     end,
     Req@.
             
-            
+let_test() -> 
+    A@ = 1,
+    let@(A@ = 2,
+         ?assertEqual(2,A@)),
+    ?assertEqual(A@,1).

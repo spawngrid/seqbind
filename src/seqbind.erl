@@ -55,6 +55,7 @@ transform(Fun, State, Forms, Context) when is_list(Forms) ->
 
 ?ScopeShift(do_transform,function, function);
 ?ScopeShift(do_transform,fun_expr, 'fun');
+?ScopeShift(do_transform,let_expr, 'let');
 ?ScopeNoShift(do_transform,receive_expr, 'receive');
 ?ScopeNoShift(do_transform,case_expr, 'case');
 ?ScopeNoShift(do_transform,if_expr, 'if');
@@ -128,6 +129,9 @@ do_transform(FormType, Form, Context, #state{ scope = [H|_] } = State) when H /=
 
 do_transform(match_expr = Type, Form, Context, State) ->
     scope(Type, Form, Context, State);
+
+do_transform(application, {call, Line, {atom, _, let@}, Args}, Context, State) ->
+    scope(let_expr, {block, Line, Args}, Context, State);
 
 do_transform(clause = Type, Form, Context, #state{ scope = [T|_] = Scopes } = State)
   when T == 'case';
