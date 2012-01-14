@@ -77,6 +77,7 @@ SeqBind also adds experimental `let` syntax in a form of a function call:
 ```erlang
 A@ = 1,
 let@(A@ = 2,
-     %% here A@ is 2),
+     %% here A@ is 2
+    ),
 %% and here A@ is 1
 ```
