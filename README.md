@@ -88,7 +88,7 @@ Extra Goodies
 
 ### Debug helpers
 
-SeqBind has a debug helper seqbind:i/3 `i(M,F,A)` that will print out the source code for a given M:F/A (provided abstract code was not removed). 
+SeqBind has a debug helper `seqbind:i/3` that will print out the source code for a given M:F/A (provided abstract code was not removed). 
 
 This will help SeqBind users to match sequential bindings names to those they have in their debugger.
 
