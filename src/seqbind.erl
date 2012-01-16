@@ -1,5 +1,6 @@
 -module(seqbind).
 -export([parse_transform/2]).
+-export([i/3]).
 
 -record(state, 
         {
@@ -211,3 +212,15 @@ maybe_hd([]) ->
     [];
 maybe_hd([H|_]) ->
     H.
+
+%% Public utilities
+i(Module, Fun, Arity) ->
+    {ok, {Module, [{abstract_code, {raw_abstract_v1, Forms}}]}} = 
+        beam_lib:chunks(code:which(Module),[abstract_code]),
+    {function, Line, _, _, _} = F = hd([ Form 
+             || {function,_Line,Name,A,Cs} = Form <- Forms,
+                Name == Fun,
+                A == Arity ]),
+    io:format("Line ~w:~n",[Line]),
+    io:format("~s~n",[erl_pp:form(F)]).
+    

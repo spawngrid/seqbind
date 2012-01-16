@@ -86,6 +86,38 @@ The same goes with `case`,`if` and `receive` clauses, also note that you cannot 
 Extra Goodies
 -------------
 
+### Debug helpers
+
+SeqBind has a debug helper seqbind:i/3 `i(M,F,A)` that will print out the source code for a given M:F/A (provided abstract code was not removed). 
+
+This will help SeqBind users to match sequential bindings names to those they have in their debugger.
+
+Example:
+
+
+```erlang
+1> seqbind:i(seqbind_tests, multiple_assignments_test, 0).
+Line 5:
+multiple_assignments_test() ->
+    A@0 = 1,
+    A@1 = 2,
+    fun(__X) ->
+           case A@1 of
+               __X ->
+                   ok;
+               __V ->
+                   .erlang:error({assertEqual_failed,
+                                  [{module,seqbind_tests},
+                                   {line,8},
+                                   {expression,"A@"},
+                                   {expected,__X},
+                                   {value,__V}]})
+           end
+    end(2).
+
+ok
+```
+
 ### Let syntax
 
 SeqBind also adds experimental `let` syntax in a form of a function call:
