@@ -218,7 +218,7 @@ i(Module, Fun, Arity) ->
     {ok, {Module, [{abstract_code, {raw_abstract_v1, Forms}}]}} = 
         beam_lib:chunks(code:which(Module),[abstract_code]),
     {function, Line, _, _, _} = F = hd([ Form 
-             || {function,_Line,Name,A,Cs} = Form <- Forms,
+             || {function,_Line,Name,A,_Cs} = Form <- Forms,
                 Name == Fun,
                 A == Arity ]),
     io:format("Line ~w:~n",[Line]),
