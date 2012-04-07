@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <title>SeqBind by spawngrid</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>SeqBind</h1>
+        <h2>Sequential Binding Parse Transformation for Erlang</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/spawngrid/seqbind/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/spawngrid/seqbind/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/spawngrid/seqbind" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>SeqBind</h1>
+
+<h2>Problem</h2>
+
+<p>Does it bother you that some of your code looks like this?</p>
+
+<div class="highlight">
+<pre> <span class="nv">L1</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="n">map</span><span class="p">(</span><span class="k">fun</span> <span class="p">(</span><span class="nv">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">...</span> <span class="k">end</span><span class="p">,</span> <span class="nv">L</span><span class="p">),</span>
+ <span class="nv">L2</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="n">filter</span><span class="p">(</span><span class="k">fun</span> <span class="p">(</span><span class="nv">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">...</span> <span class="k">end</span><span class="p">,</span> <span class="nv">L1</span><span class="p">)</span>
+ <span class="c">%% or</span>
+ <span class="p">{</span><span class="nv">Q</span><span class="p">,</span><span class="nv">Req1</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cowboy_http_req</span><span class="p">:</span><span class="n">qs_val</span><span class="p">(</span><span class="o">&lt;&lt;</span><span class="s">"q"</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="nv">Req</span><span class="p">),</span>
+ <span class="p">{</span><span class="nv">Id</span><span class="p">,</span><span class="nv">Req2</span><span class="p">}</span> <span class="o">=</span> <span class="nn">cowboy_http_req</span><span class="p">:</span><span class="n">qs_val</span><span class="p">(</span><span class="o">&lt;&lt;</span><span class="s">"id"</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="nv">Req1</span><span class="p">)</span>
+</pre>
+</div>
+
+
+<h2>Solution</h2>
+
+<p>While there are some solutions available to address this, such as giving variables more descriptive names or extracting each step into a separate function, this might not be particularly  suitable for every case. Providing descriptive names still doesn't assist with reordering and having too many function calls may add complexity and unnecessary overhead.</p>
+
+<p>SeqBind offers a different, yet simple, solution to this problem.</p>
+
+<p>It introduces the concept of sequential bindings. What is that? Sequential bindings are bindings that carry the suffix <code>@</code> (like <code>L@</code> or <code>Req@</code>) for example.</p>
+
+<p>SeqBind is a parse transformation that auto-numbers all occurrences of these bindings following the suffix @ (creating <code>L@0</code>, <code>L@1</code>, <code>Req@0</code>, <code>Req@1</code>) and so on.</p>
+
+<p>In order to use SeqBind, one should enable the <code>seqbind</code> parse transformation, this can be done either through compiler options or by adding the line below to your module:</p>
+
+<div class="highlight">
+<pre><span class="p">-</span><span class="ni">compile</span><span class="p">({</span><span class="n">parse_transform</span><span class="p">,</span><span class="n">seqbind</span><span class="p">}).</span>
+</pre>
+</div>
+
+
+<p>One of the important properties of SeqBind is that it does not introduce any overhead (unlike some other, relatively similar solutions). Namely, it doesn't wrap anything into <code>fun</code>s but simply auto-numbers bindings. Effectively, your compiled code is no different from the original code structurally.</p>
+
+<p>Returning to the problem definition, this is how your code will look like with SeqBind:</p>
+
+<div class="highlight">
+<pre> <span class="nv">L</span><span class="p">@</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="n">map</span><span class="p">(</span><span class="k">fun</span> <span class="p">(</span><span class="nv">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">...</span> <span class="k">end</span><span class="p">,</span> <span class="nv">L</span><span class="p">@),</span>
+ <span class="nv">L</span><span class="p">@</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="n">filter</span><span class="p">(</span><span class="k">fun</span> <span class="p">(</span><span class="nv">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">...</span> <span class="k">end</span><span class="p">,</span> <span class="nv">L</span><span class="p">@)</span>
+ <span class="c">%% or</span>
+ <span class="p">{</span><span class="nv">Q</span><span class="p">,</span><span class="nv">Req</span><span class="p">@}</span> <span class="o">=</span> <span class="nn">cowboy_http_req</span><span class="p">:</span><span class="n">qs_val</span><span class="p">(</span><span class="o">&lt;&lt;</span><span class="s">"q"</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="nv">Req</span><span class="p">@),</span>
+ <span class="p">{</span><span class="nv">Id</span><span class="p">,</span><span class="nv">Req</span><span class="p">@}</span> <span class="o">=</span> <span class="nn">cowboy_http_req</span><span class="p">:</span><span class="n">qs_val</span><span class="p">(</span><span class="o">&lt;&lt;</span><span class="s">"id"</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="nv">Req</span><span class="p">@)</span>
+</pre>
+</div>
+
+
+<p>Neat, eh?</p>
+
+<p><strong>Please</strong>, don't use SeqBind everywhere. It is intended to be only used in those situations that really warrant its use. <em>Overuse of this technique will make your code look too noisy</em> (<code>@</code> does stand out) and in general should be avoided as it does obscure the functional nature of Erlang.</p>
+
+<h2>General Rules</h2>
+
+<p>There are few rules to be followed.</p>
+
+<h3>Left and Right</h3>
+
+<p>In the matches (such as <code>A@ = 1</code>) the side of the match is significant to SeqBind. Even though in Erlang itself it is not, this agreement allows SeqBind to do its job.</p>
+
+<p>The basic idea is that if you have a sequential binding on the left, its counter will be incremented. If it's on the right, the current counter value will be used.</p>
+
+<p>As a consequence of this, one should be aware, that with the commonly used syntax:</p>
+
+<div class="highlight">
+<pre><span class="nl">#state</span><span class="p">{}</span> <span class="o">=</span> <span class="nv">State</span><span class="p">@</span>
+</pre>
+</div>
+
+
+<p>Notice that because the bound variable is on the right; it will, as a result, not increment the counter for <code>State@</code> (with the noted exception of when this syntax is used in a function clause). In order to achieve the intended result, one should do:</p>
+
+<div class="highlight">
+<pre><span class="nv">State</span><span class="p">@</span> <span class="o">=</span> <span class="nl">#state</span><span class="p">{}</span>
+</pre>
+</div>
+
+
+<h3>Matching</h3>
+
+<p>If instead of incrementing a sequential binding's counter you actually just want to match its value while putting it on the left side, you simply drop the suffix like so:</p>
+
+<div class="highlight">
+<pre><span class="nv">State</span><span class="p">@</span> <span class="o">=</span> <span class="n">get_state</span><span class="p">(),</span>
+<span class="nv">State</span> <span class="o">=</span> <span class="n">get_state_again</span><span class="p">()</span>
+</pre>
+</div>
+
+
+<p>The same goes with <code>case</code>,<code>if</code> and <code>receive</code> clauses, also note that you cannot <code>seqbind</code> a variable after it has been declared, it must come first.</p>
+
+<h2>Extra Goodies</h2>
+
+<h3>Debug helpers</h3>
+
+<p>SeqBind has a debug helper <code>seqbind:i/3</code> that will print out the source code for a given M:F/A (provided abstract code was not removed). </p>
+
+<p>This will help SeqBind users to match sequential bindings names to those they have in their debugger.</p>
+
+<p>Example:</p>
+
+<div class="highlight">
+<pre><span class="mi">1</span><span class="o">&gt;</span> <span class="nn">seqbind</span><span class="p">:</span><span class="n">i</span><span class="p">(</span><span class="n">seqbind_tests</span><span class="p">,</span> <span class="n">multiple_assignments_test</span><span class="p">,</span> <span class="mi">0</span><span class="p">).</span>
+<span class="nv">Line</span> <span class="mi">5</span><span class="p">:</span>
+<span class="nf">multiple_assignments_test</span><span class="p">()</span> <span class="o">-&gt;</span>
+    <span class="nv">A</span><span class="p">@</span><span class="mi">0</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nv">A</span><span class="p">@</span><span class="mi">1</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="k">fun</span><span class="p">(__</span><span class="nv">X</span><span class="p">)</span> <span class="o">-&gt;</span>
+           <span class="k">case</span> <span class="nv">A</span><span class="p">@</span><span class="mi">1</span> <span class="k">of</span>
+               <span class="p">__</span><span class="nv">X</span> <span class="o">-&gt;</span>
+                   <span class="n">ok</span><span class="p">;</span>
+               <span class="p">__</span><span class="nv">V</span> <span class="o">-&gt;</span>
+                   <span class="p">.</span><span class="nn">erlang</span><span class="p">:</span><span class="n">error</span><span class="p">({</span><span class="n">assertEqual_failed</span><span class="p">,</span>
+                                  <span class="p">[{</span><span class="n">module</span><span class="p">,</span><span class="n">seqbind_tests</span><span class="p">},</span>
+                                   <span class="p">{</span><span class="n">line</span><span class="p">,</span><span class="mi">8</span><span class="p">},</span>
+                                   <span class="p">{</span><span class="n">expression</span><span class="p">,</span><span class="s">"A@"</span><span class="p">},</span>
+                                   <span class="p">{</span><span class="n">expected</span><span class="p">,__</span><span class="nv">X</span><span class="p">},</span>
+                                   <span class="p">{</span><span class="n">value</span><span class="p">,__</span><span class="nv">V</span><span class="p">}]})</span>
+           <span class="k">end</span>
+    <span class="k">end</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span>
+
+<span class="n">ok</span>
+</pre>
+</div>
+
+
+<h3>Let syntax</h3>
+
+<p>SeqBind also adds experimental <code>let</code> syntax in a form of a function call:</p>
+
+<div class="highlight">
+<pre><span class="nv">A</span><span class="p">@</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="k">let</span><span class="p">@(</span><span class="nv">A</span><span class="p">@</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+     <span class="c">%% here A@ is 2</span>
+    <span class="p">),</span>
+<span class="c">%% and here A@ is 1</span>
+</pre>
+</div>
+
+      </section>
+    </div>
+
+    
+  </body>
+</html>
