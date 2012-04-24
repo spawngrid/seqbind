@@ -12,17 +12,13 @@
         }).
 
 parse_transform(Forms, Options) ->
-    case erl_lint:module(Forms) of
-        {ok, _W} ->
-            {Forms1, _State} =
-                parse_trans:transform(fun scope/4,
-                                      #state{ options = Options },
-                                      Forms, Options),
-            Result = parse_trans:revert(Forms1),
-            %%    io:format("~s~n",[[ erl_pp:form(F) || F <- Result]]),
-            Result;
-        {error, _E, _W} -> Forms
-    end.
+    {Forms1, _State} = parse_trans:transform(fun scope/4,
+                                             #state{ options = Options },
+                                             Forms, Options),
+    Result = parse_trans:revert(Forms1),
+    % io:format("~s~n",[[ erl_pp:form(F) || F <- Result]]),
+    Result.
+
 
 -define(UnshiftSeqVars, [[]|SeqVars]).
 -define(ShiftSeqVars(SV), maybe_tl(SV)).
